@@ -296,10 +296,10 @@ function setMinDate() {
 
 function initializeBookingForm() {
   const form = document.getElementById('bookingForm');
-  
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     // Get form data
     const formData = {
       name: document.getElementById('name').value,
@@ -309,37 +309,57 @@ function initializeBookingForm() {
       duration: document.querySelector('input[name="duration"]:checked').value,
       address: document.getElementById('address').value,
       paymentMethod: document.getElementById('paymentMethod').value,
-      instructions: document.getElementById('instructions').value,
+      specialInstructions: document.getElementById('instructions').value,
       confirmationNumber: generateConfirmationNumber(),
       bookingDate: new Date().toISOString()
     };
-    
+
     // Show loading state
     const submitBtn = document.getElementById('submitBtn');
     const btnText = submitBtn.querySelector('.btn-text');
     const btnLoader = submitBtn.querySelector('.btn-loader');
-    
+
     btnText.style.display = 'none';
     btnLoader.style.display = 'flex';
     submitBtn.disabled = true;
-    
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Store booking
-    bookings.push(formData);
-    
-    // Simulate sending notifications
-    simulateNotifications(formData);
-    
-    // Show confirmation modal
-    showConfirmation(formData);
-    
-    // Reset form
-    form.reset();
-    btnText.style.display = 'flex';
-    btnLoader.style.display = 'none';
-    submitBtn.disabled = false;
+
+    try {
+      // Send email confirmation
+      const supabaseUrl = 'https://0ec90b57d6e95fcbda198a32f.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJib2x0IiwicmVmIjoiMGVjOTBiNTdkNmU5NWZjYmRhMTk4MzJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg4ODE1NzQsImV4cCI6MTc1ODg4MTU3NH0.9I8-U0x86Ak8t2DGaIk0HfvTSLsAyzdnz-Nw00mMkKw';
+
+      const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-booking-confirmation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!emailResponse.ok) {
+        throw new Error('Failed to send confirmation email');
+      }
+
+      // Store booking in memory
+      bookings.push(formData);
+
+      // Log to console
+      simulateNotifications(formData);
+
+      // Show confirmation modal
+      showConfirmation(formData);
+
+      // Reset form
+      form.reset();
+    } catch (error) {
+      console.error('Booking error:', error);
+      alert('There was an issue processing your booking. Please try again or contact us directly.');
+    } finally {
+      btnText.style.display = 'flex';
+      btnLoader.style.display = 'none';
+      submitBtn.disabled = false;
+    }
   });
 }
 
